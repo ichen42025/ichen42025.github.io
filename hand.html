@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Teachable Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .stop-btn {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .stop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .webcam-section {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        #webcam-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f0f0;
+            border-radius: 15px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #webcam-container canvas {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100% !important;
+            height: auto !important;
+            max-width: 400px;
+        }
+
+        .placeholder {
+            color: #999;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .predictions-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .predictions-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .prediction-item {
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .prediction-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .prediction-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .prediction-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 25px;
+            position: relative;
+        }
+
+        .prediction-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .bar-red {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        .bar-yellow {
+            background: linear-gradient(45deg, #ffd93d, #ffcd3c);
+            color: #333;
+        }
+
+        .bar-gray {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .webcam-section {
+                flex-direction: column;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Vision Recognition</h1>
+        
+        <div class="controls">
+            <button class="start-btn" onclick="startWebcam()">📹 Start Camera</button>
+            <button class="stop-btn" onclick="stopWebcam()">🛑 Stop Camera</button>
+        </div>
+
+        <div class="webcam-section">
+            <div id="webcam-container">
+                <div class="placeholder">Click "Start Camera" to begin</div>
+            </div>
+            
+            <div class="predictions-section">
+                <h3 class="predictions-title">📊 Predictions</h3>
+                <div id="label-container"></div>
+                <div class="status" id="status">Ready to start...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        const URL = "https://teachablemachine.withgoogle.com/models/G-M-QelPg/";
+        let model, webcam, labelContainer, maxPredictions;
+        let isWebcamRunning = false;
+
+        async function startWebcam() {
+            if (isWebcamRunning) return;
+            
+            try {
+                document.getElementById('status').textContent = 'Loading model...';
+                
+                // Load model
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                // Setup webcam
+                const flip = true;
+                webcam = new tmImage.Webcam(400, 400, flip);
+                await webcam.setup();
+                await webcam.play();
+                
+                // Clear placeholder and add webcam
+                const webcamContainer = document.getElementById("webcam-container");
+                webcamContainer.innerHTML = '';
+                webcamContainer.appendChild(webcam.canvas);
+                
+                // Setup prediction labels
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = '';
+                for (let i = 0; i < maxPredictions; i++) {
+                    const predictionDiv = document.createElement("div");
+                    predictionDiv.className = "prediction-item";
+                    predictionDiv.innerHTML = `
+                        <div class="prediction-label" id="label-${i}">Loading...</div>
+                        <div class="prediction-bar-container">
+                            <div class="prediction-bar bar-gray" id="bar-${i}" style="width: 0%">0%</div>
+                        </div>
+                    `;
+                    labelContainer.appendChild(predictionDiv);
+                }
+                
+                isWebcamRunning = true;
+                document.getElementById('status').textContent = 'Camera active - AI analyzing...';
+                loop();
+                
+            } catch (error) {
+                console.error('Error starting webcam:', error);
+                document.getElementById('status').textContent = 'Error: Could not access camera';
+            }
+        }
+
+        async function stopWebcam() {
+            if (!isWebcamRunning) return;
+            
+            if (webcam) {
+                webcam.stop();
+            }
+            
+            const webcamContainer = document.getElementById("webcam-container");
+            webcamContainer.innerHTML = '<div class="placeholder">Click "Start Camera" to begin</div>';
+            
+            document.getElementById("label-container").innerHTML = '';
+            document.getElementById('status').textContent = 'Camera stopped';
+            isWebcamRunning = false;
+        }
+
+        async function loop() {
+            if (!isWebcamRunning) return;
+            
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            
+            // Sort predictions by probability to determine ranking
+            const sortedPredictions = prediction
+                .map((p, index) => ({ ...p, originalIndex: index }))
+                .sort((a, b) => b.probability - a.probability);
+            
+            for (let i = 0; i < maxPredictions; i++) {
+                const pred = prediction[i];
+                const percentage = (pred.probability * 100).toFixed(1);
+                
+                // Find ranking of this prediction
+                const rank = sortedPredictions.findIndex(p => p.originalIndex === i);
+                
+                // Update label and bar
+                document.getElementById(`label-${i}`).textContent = pred.className;
+                const bar = document.getElementById(`bar-${i}`);
+                bar.style.width = percentage + '%';
+                bar.textContent = percentage + '%';
+                
+                // Set color based on ranking
+                bar.className = 'prediction-bar ';
+                if (rank === 0) {
+                    bar.className += 'bar-red';
+                } else if (rank === 1) {
+                    bar.className += 'bar-yellow';
+                } else {
+                    bar.className += 'bar-gray';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
